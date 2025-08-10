@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
@@ -21,13 +21,11 @@ export type Database = {
           city: string | null
           created_at: string
           customer_type: string | null
-          document_number: string | null
-          document_type: string | null
           email: string | null
           id: string
           is_active: boolean
           last_purchase_date: string | null
-          name: string | null
+          name: string
           phone: string | null
           postal_code: string | null
           total_purchases: number | null
@@ -39,13 +37,11 @@ export type Database = {
           city?: string | null
           created_at?: string
           customer_type?: string | null
-          document_number?: string | null
-          document_type?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
           last_purchase_date?: string | null
-          name?: string | null
+          name: string
           phone?: string | null
           postal_code?: string | null
           total_purchases?: number | null
@@ -57,19 +53,97 @@ export type Database = {
           city?: string | null
           created_at?: string
           customer_type?: string | null
-          document_number?: string | null
-          document_type?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
           last_purchase_date?: string | null
-          name?: string | null
+          name?: string
           phone?: string | null
           postal_code?: string | null
           total_purchases?: number | null
           updated_at?: string
         }
         Relationships: []
+      }
+      dispatch_items: {
+        Row: {
+          created_at: string
+          dispatch_id: string
+          dispatched_meterage: number | null
+          id: string
+          inventory_item_id: string
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          dispatch_id: string
+          dispatched_meterage?: number | null
+          id?: string
+          inventory_item_id: string
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          dispatch_id?: string
+          dispatched_meterage?: number | null
+          id?: string
+          inventory_item_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_items_dispatch_id_fkey"
+            columns: ["dispatch_id"]
+            isOneToOne: false
+            referencedRelation: "dispatches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dispatches: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          dispatch_date: string | null
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["dispatch_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          dispatch_date?: string | null
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["dispatch_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          dispatch_date?: string | null
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["dispatch_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatches_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expenses: {
         Row: {
@@ -110,164 +184,274 @@ export type Database = {
         }
         Relationships: []
       }
-      products: {
+      inventory_items: {
         Row: {
-          category: string
-          color: string | null
-          cost: number
           created_at: string
-          description: string | null
+          dispatched_at: string | null
           id: string
-          image_url: string | null
-          is_active: boolean
-          min_stock: number
-          name: string
-          price: number
-          size: string | null
-          sku: string
-          stock_quantity: number
+          location_id: string | null
+          meterage: number | null
+          notes: string | null
+          packing_list_id: string | null
+          product_id: string
+          received_at: string | null
+          serial_number: string
+          status: Database["public"]["Enums"]["inventory_item_status"]
           updated_at: string
-        }
-        Insert: {
-          category: string
-          color?: string | null
-          cost: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          min_stock?: number
-          name: string
-          price: number
-          size?: string | null
-          sku: string
-          stock_quantity?: number
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          color?: string | null
-          cost?: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          min_stock?: number
-          name?: string
-          price?: number
-          size?: string | null
-          sku?: string
-          stock_quantity?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      sale_items: {
-        Row: {
-          created_at: string
-          id: string
-          product_id: string | null
-          quantity: number
-          sale_id: string | null
-          total_price: number
-          unit_price: number
+          weight_kg: number | null
         }
         Insert: {
           created_at?: string
+          dispatched_at?: string | null
           id?: string
-          product_id?: string | null
-          quantity: number
-          sale_id?: string | null
-          total_price: number
-          unit_price: number
+          location_id?: string | null
+          meterage?: number | null
+          notes?: string | null
+          packing_list_id?: string | null
+          product_id: string
+          received_at?: string | null
+          serial_number: string
+          status?: Database["public"]["Enums"]["inventory_item_status"]
+          updated_at?: string
+          weight_kg?: number | null
         }
         Update: {
           created_at?: string
+          dispatched_at?: string | null
           id?: string
-          product_id?: string | null
-          quantity?: number
-          sale_id?: string | null
-          total_price?: number
-          unit_price?: number
+          location_id?: string | null
+          meterage?: number | null
+          notes?: string | null
+          packing_list_id?: string | null
+          product_id?: string
+          received_at?: string | null
+          serial_number?: string
+          status?: Database["public"]["Enums"]["inventory_item_status"]
+          updated_at?: string
+          weight_kg?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "sale_items_product_id_fkey"
+            foreignKeyName: "inventory_items_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_packing_list_id_fkey"
+            columns: ["packing_list_id"]
+            isOneToOne: false
+            referencedRelation: "packing_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          from_location_id: string | null
+          id: string
+          inventory_item_id: string
+          moved_at: string
+          reason: string | null
+          to_location_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          from_location_id?: string | null
+          id?: string
+          inventory_item_id: string
+          moved_at?: string
+          reason?: string | null
+          to_location_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          from_location_id?: string | null
+          id?: string
+          inventory_item_id?: string
+          moved_at?: string
+          reason?: string | null
+          to_location_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "sale_items_sale_id_fkey"
-            columns: ["sale_id"]
+            foreignKeyName: "inventory_movements_from_location_id_fkey"
+            columns: ["from_location_id"]
             isOneToOne: false
-            referencedRelation: "sales"
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_to_location_id_fkey"
+            columns: ["to_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
             referencedColumns: ["id"]
           },
         ]
       }
-      sales: {
+      locations: {
         Row: {
+          aisle: string
+          barcode: string | null
           created_at: string
-          customer_id: string | null
-          delivery_fee: number | null
-          discount_amount: number | null
           id: string
-          notes: string | null
-          payment_method: string
-          sale_date: string
-          status: string | null
-          tax_amount: number | null
-          total_amount: number
+          level: string
+          position: string
+          rack: string
+          updated_at: string
         }
         Insert: {
+          aisle: string
+          barcode?: string | null
           created_at?: string
-          customer_id?: string | null
-          delivery_fee?: number | null
-          discount_amount?: number | null
           id?: string
-          notes?: string | null
-          payment_method: string
-          sale_date?: string
-          status?: string | null
-          tax_amount?: number | null
-          total_amount: number
+          level: string
+          position: string
+          rack: string
+          updated_at?: string
         }
         Update: {
+          aisle?: string
+          barcode?: string | null
           created_at?: string
-          customer_id?: string | null
-          delivery_fee?: number | null
-          discount_amount?: number | null
           id?: string
-          notes?: string | null
-          payment_method?: string
-          sale_date?: string
-          status?: string | null
-          tax_amount?: number | null
-          total_amount?: number
+          level?: string
+          position?: string
+          rack?: string
+          updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "sales_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      packing_lists: {
+        Row: {
+          arrival_date: string
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["packing_list_status"]
+          supplier_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          arrival_date: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["packing_list_status"]
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arrival_date?: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["packing_list_status"]
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: string | null
+          created_at: string
+          default_meterage: number | null
+          default_weight_kg: number | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          product_type: Database["public"]["Enums"]["product_type"] | null
+          sku: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          default_meterage?: number | null
+          default_weight_kg?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          product_type?: Database["public"]["Enums"]["product_type"] | null
+          sku: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          default_meterage?: number | null
+          default_weight_kg?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          product_type?: Database["public"]["Enums"]["product_type"] | null
+          sku?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_dispatch: {
+        Args: { p_customer_id: string; p_notes: string; p_dispatch_items: Json }
+        Returns: string
+      }
+      move_inventory_item: {
+        Args: {
+          p_item_id: string
+          p_new_location_id: string
+          p_reason?: string
+        }
+        Returns: undefined
+      }
+      verify_and_place_item: {
+        Args: { p_serial_number: string; p_location_barcode: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      user_role: "admin" | "client"
+      dispatch_status:
+        | "borrador"
+        | "pendiente"
+        | "procesando"
+        | "completado"
+        | "cancelado"
+      inventory_item_status:
+        | "en_verificacion"
+        | "disponible"
+        | "reservado"
+        | "despachado"
+        | "dado_de_baja"
+      packing_list_status:
+        | "pendiente"
+        | "procesando"
+        | "completado"
+        | "discrepancia"
+      product_type: "rollo_tela" | "tanque_ibc"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -395,7 +579,27 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      user_role: ["admin", "client"],
+      dispatch_status: [
+        "borrador",
+        "pendiente",
+        "procesando",
+        "completado",
+        "cancelado",
+      ],
+      inventory_item_status: [
+        "en_verificacion",
+        "disponible",
+        "reservado",
+        "despachado",
+        "dado_de_baja",
+      ],
+      packing_list_status: [
+        "pendiente",
+        "procesando",
+        "completado",
+        "discrepancia",
+      ],
+      product_type: ["rollo_tela", "tanque_ibc"],
     },
   },
 } as const

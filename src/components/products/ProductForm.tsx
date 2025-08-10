@@ -6,25 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { formatColombianPeso, parseColombianPeso, formatInputForDisplay } from '@/lib/currency';
+import type { Tables } from '@/integrations/supabase/types';
 
-interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  cost: number;
-  sku: string;
-  category: string;
-  size: string | null;
-  color: string | null;
-  stock_quantity: number;
-  min_stock: number;
-  image_url: string | null;
-  is_active: boolean;
-}
+// Use the specific type from generated types
+type Product = Tables<'products'>;
 
 interface ProductFormProps {
   product?: Product | null;
@@ -36,16 +24,13 @@ export function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: '',
-    cost: '',
     sku: '',
     category: '',
-    size: '',
-    color: '',
-    stock_quantity: '',
-    min_stock: '5',
     image_url: '',
     is_active: true,
+    product_type: 'rollo_tela' as 'rollo_tela' | 'tanque_ibc',
+    default_meterage: '',
+    default_weight_kg: '',
   });
 
   useEffect(() => {
@@ -53,16 +38,13 @@ export function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
       setFormData({
         name: product.name,
         description: product.description || '',
-        price: formatColombianPeso(product.price),
-        cost: formatColombianPeso(product.cost),
         sku: product.sku,
-        category: product.category,
-        size: product.size || '',
-        color: product.color || '',
-        stock_quantity: product.stock_quantity.toString(),
-        min_stock: product.min_stock.toString(),
+        category: product.category || '',
         image_url: product.image_url || '',
         is_active: product.is_active,
+        product_type: product.product_type || 'rollo_tela',
+        default_meterage: product.default_meterage?.toString() || '',
+        default_weight_kg: product.default_weight_kg?.toString() || '',
       });
     }
   }, [product]);
@@ -72,16 +54,13 @@ export function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
       const productData = {
         name: data.name,
         description: data.description || null,
-        price: parseColombianPeso(data.price),
-        cost: parseColombianPeso(data.cost),
         sku: data.sku,
-        category: data.category,
-        size: data.size || null,
-        color: data.color || null,
-        stock_quantity: parseInt(data.stock_quantity),
-        min_stock: parseInt(data.min_stock),
+        category: data.category || null,
         image_url: data.image_url || null,
         is_active: data.is_active,
+        product_type: data.product_type,
+        default_meterage: data.product_type === 'rollo_tela' && data.default_meterage ? parseFloat(data.default_meterage) : null,
+        default_weight_kg: data.product_type === 'tanque_ibc' && data.default_weight_kg ? parseFloat(data.default_weight_kg) : null,
       };
 
       if (product) {
@@ -100,14 +79,14 @@ export function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
     onSuccess: () => {
       toast({
         title: product ? "Producto actualizado" : "Producto creado",
-        description: `El producto ha sido ${product ? 'actualizado' : 'creado'} exitosamente.`,
+        description: `La plantilla de producto ha sido ${product ? 'actualizada' : 'creada'} exitosamente.`,
       });
       onSuccess();
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `No se pudo ${product ? 'actualizar' : 'crear'} el producto. ` + error.message,
+        description: `No se pudo ${product ? 'actualizar' : 'crear'} la plantilla de producto. ` + error.message,
         variant: "destructive",
       });
     },
@@ -115,36 +94,25 @@ export function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validar longitud del nombre
-    if (formData.name.length > 60) {
-      toast({
-        title: "Error de validación",
-        description: "El nombre no puede exceder los 60 caracteres.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     mutation.mutate(formData);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    
-    if (name === 'price' || name === 'cost') {
-      // Formatear campos de moneda
-      const formattedValue = formatInputForDisplay(value);
-      setFormData(prev => ({
-        ...prev,
-        [name]: formattedValue
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    const isCheckbox = type === 'checkbox';
+    const checked = (e.target as HTMLInputElement).checked;
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: isCheckbox ? checked : value
+    }));
+  };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   return (
@@ -153,7 +121,7 @@ export function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>
-              {product ? 'Editar Producto' : 'Nuevo Producto'}
+              {product ? 'Editar Plantilla de Producto' : 'Nueva Plantilla de Producto'}
             </CardTitle>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />
@@ -165,127 +133,55 @@ export function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre *</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  maxLength={60}
-                  required
-                />
+                <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="sku">SKU *</Label>
-                <Input
-                  id="sku"
-                  name="sku"
-                  value={formData.sku}
-                  onChange={handleChange}
-                  required
-                />
+                <Input id="sku" name="sku" value={formData.sku} onChange={handleChange} required />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Categoría *</Label>
-                <Input
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  required
-                />
+                <Label htmlFor="category">Categoría</Label>
+                <Input id="category" name="category" value={formData.category} onChange={handleChange} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Precio de Venta *</Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="text"
-                  placeholder="Ej: 129.000"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                />
+                <Label htmlFor="product_type">Tipo de Producto *</Label>
+                <Select name="product_type" value={formData.product_type} onValueChange={(value) => handleSelectChange('product_type', value)} required>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rollo_tela">Rollo de Tela</SelectItem>
+                    <SelectItem value="tanque_ibc">Tanque IBC</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="cost">Costo *</Label>
-                <Input
-                  id="cost"
-                  name="cost"
-                  type="text"
-                  placeholder="Ej: 89.000"
-                  value={formData.cost}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+              {formData.product_type === 'rollo_tela' && (
+                <div className="space-y-2">
+                  <Label htmlFor="default_meterage">Metraje por Defecto (m)</Label>
+                  <Input id="default_meterage" name="default_meterage" type="number" value={formData.default_meterage} onChange={handleChange} placeholder="Ej: 500.00" />
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="stock_quantity">Cantidad en Stock *</Label>
-                <Input
-                  id="stock_quantity"
-                  name="stock_quantity"
-                  type="number"
-                  value={formData.stock_quantity}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="min_stock">Stock Mínimo</Label>
-                <Input
-                  id="min_stock"
-                  name="min_stock"
-                  type="number"
-                  value={formData.min_stock}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="size">Talla</Label>
-                <Input
-                  id="size"
-                  name="size"
-                  value={formData.size}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="color">Color</Label>
-                <Input
-                  id="color"
-                  name="color"
-                  value={formData.color}
-                  onChange={handleChange}
-                />
-              </div>
-
+              {formData.product_type === 'tanque_ibc' && (
+                <div className="space-y-2">
+                  <Label htmlFor="default_weight_kg">Peso por Defecto (kg)</Label>
+                  <Input id="default_weight_kg" name="default_weight_kg" type="number" value={formData.default_weight_kg} onChange={handleChange} placeholder="Ej: 1000.00" />
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="image_url">URL de Imagen</Label>
-                <Input
-                  id="image_url"
-                  name="image_url"
-                  type="url"
-                  value={formData.image_url}
-                  onChange={handleChange}
-                />
+                <Input id="image_url" name="image_url" type="url" value={formData.image_url} onChange={handleChange} />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Descripción</Label>
-              <Input
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-              />
+              <Input id="description" name="description" value={formData.description} onChange={handleChange} />
             </div>
 
             <div className="flex items-center space-x-2">
@@ -297,7 +193,7 @@ export function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
                 onChange={handleChange}
                 className="w-4 h-4"
               />
-              <Label htmlFor="is_active">Producto activo</Label>
+              <Label htmlFor="is_active">Plantilla activa</Label>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
@@ -307,7 +203,7 @@ export function ProductForm({ product, onClose, onSuccess }: ProductFormProps) {
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending 
                   ? (product ? 'Actualizando...' : 'Creando...') 
-                  : (product ? 'Actualizar' : 'Crear')
+                  : (product ? 'Actualizar Plantilla' : 'Crear Plantilla')
                 }
               </Button>
             </div>

@@ -11,6 +11,7 @@ interface StatCardProps {
   icon: LucideIcon;
   className?: string;
   style?: CSSProperties;
+  isLoading?: boolean;
 }
 
 export function StatCard({ 

@@ -10,6 +10,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 export function Analytics() {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -41,219 +42,107 @@ export function Analytics() {
     }
   };
 
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['analytics-stats', selectedYear],
+  const { data: dashboardData, isLoading } = useQuery({
+    queryKey: ['wms_analytics', selectedYear],
     queryFn: async () => {
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11
-      const currentMonthStart = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
-      const currentMonthEnd = new Date(currentYear, currentMonth, 0).toISOString().split('T')[0]; // Last day of current month
+      const currentMonthStart = format(new Date().setDate(1), 'yyyy-MM-dd');
+      const currentMonthEnd = format(new Date(), 'yyyy-MM-dd');
 
-      // Obtener ventas con items y productos para calcular ganancias reales
-      const [salesResult, productsResult, customersResult, expensesResult, currentMonthSalesResult, currentMonthExpensesResult] = await Promise.all([
+      const [
+        dispatchesResult,
+        productsResult, 
+        customersResult,
+        expensesResult,
+        currentMonthDispatchesResult,
+        currentMonthExpensesResult
+      ] = await Promise.all([
         supabase
-          .from('sales')
+          .from('dispatches')
           .select(`
-            total_amount, 
-            sale_date, 
-            discount_amount, 
-            tax_amount,
-            delivery_fee,
-            sale_items (
-              quantity,
-              unit_price,
-              total_price,
-              products (
-                cost
-              )
-            )
+            id,
+            dispatch_date,
+            status,
+            created_at
           `)
-          .gte('sale_date', `${selectedYear}-01-01`)
-          .lte('sale_date', `${selectedYear}-12-31`),
-        supabase.from('products').select('stock_quantity, category, price, cost'),
+          .gte('dispatch_date', `${selectedYear}-01-01`)
+          .lte('dispatch_date', `${selectedYear}-12-31`),
+        supabase.from('products').select('category, name, sku'),
         supabase.from('customers').select('customer_type, total_purchases'),
         supabase.from('expenses').select('amount, category, expense_date')
           .gte('expense_date', `${selectedYear}-01-01`)
           .lte('expense_date', `${selectedYear}-12-31`),
-        // Current month sales
+        // Current month dispatches
         supabase
-          .from('sales')
+          .from('dispatches')
           .select(`
-            total_amount, 
-            sale_date, 
-            discount_amount, 
-            tax_amount,
-            delivery_fee,
-            sale_items (
-              quantity,
-              unit_price,
-              total_price,
-              products (
-                cost
-              )
-            )
+            id,
+            dispatch_date,
+            status,
+            created_at
           `)
-          .gte('sale_date', currentMonthStart)
-          .lte('sale_date', currentMonthEnd),
+          .gte('dispatch_date', currentMonthStart)
+          .lte('dispatch_date', currentMonthEnd),
         // Current month expenses
         supabase.from('expenses').select('amount, category, expense_date')
           .gte('expense_date', currentMonthStart)
           .lte('expense_date', currentMonthEnd)
       ]);
 
-      const sales = salesResult.data || [];
+      if (dispatchesResult.error) throw dispatchesResult.error;
+      if (productsResult.error) throw productsResult.error;
+      if (customersResult.error) throw customersResult.error;
+      if (expensesResult.error) throw expensesResult.error;
+      if (currentMonthDispatchesResult.error) throw currentMonthDispatchesResult.error;
+      if (currentMonthExpensesResult.error) throw currentMonthExpensesResult.error;
+
+      const dispatches = dispatchesResult.data || [];
       const products = productsResult.data || [];
       const customers = customersResult.data || [];
       const expenses = expensesResult.data || [];
-      const currentMonthSales = currentMonthSalesResult.data || [];
+      const currentMonthDispatches = currentMonthDispatchesResult.data || [];
       const currentMonthExpenses = currentMonthExpensesResult.data || [];
 
-      // Calcular ganancias reales por venta (función helper)
-      const calculateSaleProfit = (sale: {
-        total_amount: number;
-        sale_date: string;
-        discount_amount?: number;
-        tax_amount?: number;
-        delivery_fee?: number;
-        sale_items?: Array<{
-          quantity: number;
-          products?: { cost?: number };
-        }>;
-      }) => {
-        const totalCost = sale.sale_items?.reduce((sum: number, item) => {
-          const itemCost = item.products?.cost || 0;
-          return sum + (itemCost * item.quantity);
-        }, 0) || 0;
-        
-        const totalRevenue = sale.total_amount;
-        const discount = sale.discount_amount || 0;
-        const tax = sale.tax_amount || 0;
-        const deliveryFee = sale.delivery_fee || 0;
-        const profit = totalRevenue - totalCost - discount - tax - deliveryFee;
-        
-        return {
-          ...sale,
-          totalCost,
-          totalRevenue,
-          discount,
-          tax,
-          deliveryFee,
-          profit
-        };
-      };
-
-      // Calcular ganancias reales por venta
-      const salesWithProfits = sales.map(calculateSaleProfit);
-      const currentMonthSalesWithProfits = currentMonthSales.map(calculateSaleProfit);
-
       // Estadísticas del mes actual
-      const currentMonthTotalSales = currentMonthSalesWithProfits.reduce((sum, sale) => sum + sale.totalRevenue, 0);
-      const currentMonthTotalCosts = currentMonthSalesWithProfits.reduce((sum, sale) => sum + sale.totalCost, 0);
-      const currentMonthTotalProfit = currentMonthSalesWithProfits.reduce((sum, sale) => sum + sale.profit, 0);
+      const currentMonthTotalDispatches = currentMonthDispatches.length;
+      const currentMonthCompletedDispatches = currentMonthDispatches.filter(d => d.status === 'completado').length;
       const currentMonthTotalExpenses = currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-      const currentMonthNetProfit = currentMonthTotalProfit - currentMonthTotalExpenses;
-      const currentMonthSalesCount = currentMonthSales.length;
 
-      // Calcular estadísticas generales
-      const totalSales = salesWithProfits.reduce((sum, sale) => sum + sale.totalRevenue, 0);
-      const totalCosts = salesWithProfits.reduce((sum, sale) => sum + sale.totalCost, 0);
-      const totalDiscounts = salesWithProfits.reduce((sum, sale) => sum + sale.discount, 0);
-      const totalTaxes = salesWithProfits.reduce((sum, sale) => sum + sale.tax, 0);
-      const totalDeliveryFees = salesWithProfits.reduce((sum, sale) => sum + sale.deliveryFee, 0);
-      const totalProfit = salesWithProfits.reduce((sum, sale) => sum + sale.profit, 0);
+      // Estadísticas del año
+      const totalDispatches = dispatches.length;
+      const completedDispatches = dispatches.filter(d => d.status === 'completado').length;
       const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
       const totalProducts = products.length;
       const totalCustomers = customers.length;
-      const lowStockProducts = products.filter(p => p.stock_quantity <= 5).length;
 
-      // Ganancia por mes para el año seleccionado
+      // Dispatches por mes para el año seleccionado
       const months = [
-        'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-        'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
       ];
 
-      const profitByMonth = salesWithProfits.reduce((acc: Record<string, { revenue: number; cost: number; profit: number }>, sale) => {
-        const month = new Date(sale.sale_date).toLocaleDateString('es-ES', { month: 'short' });
-        if (!acc[month]) {
-          acc[month] = { revenue: 0, cost: 0, profit: 0 };
-        }
-        acc[month].revenue += sale.totalRevenue;
-        acc[month].cost += sale.totalCost;
-        acc[month].profit += sale.profit;
-        return acc;
-      }, {});
-
-      // Crear datos mensuales completos para el año seleccionado
-      const monthlyData = months.map(month => {
-        const monthData = profitByMonth[month] || { revenue: 0, cost: 0, profit: 0 };
+      const dispatchesByMonth = months.map((month, index) => {
+        const monthDispatches = dispatches.filter(d => {
+          const date = new Date(d.dispatch_date || d.created_at);
+          return date.getMonth() === index;
+        });
         return {
-          month: month.charAt(0).toUpperCase() + month.slice(1), // Capitalizar primera letra
-          ingresos: monthData.revenue,
-          costos: monthData.cost,
-          ganancia: monthData.profit
+          month,
+          count: monthDispatches.length,
+          completed: monthDispatches.filter(d => d.status === 'completado').length
         };
       });
 
-      // Ganancia por semana
-      const profitByWeek = salesWithProfits.reduce((acc: Record<string, { revenue: number; cost: number; profit: number }>, sale) => {
-        const date = new Date(sale.sale_date);
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        const weekKey = weekStart.toISOString().split('T')[0];
-        
-        if (!acc[weekKey]) {
-          acc[weekKey] = { revenue: 0, cost: 0, profit: 0 };
-        }
-        acc[weekKey].revenue += sale.totalRevenue;
-        acc[weekKey].cost += sale.totalCost;
-        acc[weekKey].profit += sale.profit;
-        return acc;
-      }, {});
-
-      const weeklyData = Object.entries(profitByWeek)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .slice(-8) // Últimas 8 semanas
-        .map(([week, data]: [string, { revenue: number; cost: number; profit: number }]) => ({
-          semana: `Sem ${new Date(week).getDate()}/${new Date(week).getMonth() + 1}`,
-          ingresos: data.revenue,
-          costos: data.cost,
-          ganancia: data.profit
-        }));
-
-      // Ganancia por día
-      const profitByDay = salesWithProfits.reduce((acc: Record<string, { revenue: number; cost: number; profit: number }>, sale) => {
-        const dayKey = sale.sale_date.split('T')[0];
-        
-        if (!acc[dayKey]) {
-          acc[dayKey] = { revenue: 0, cost: 0, profit: 0 };
-        }
-        acc[dayKey].revenue += sale.totalRevenue;
-        acc[dayKey].cost += sale.totalCost;
-        acc[dayKey].profit += sale.profit;
-        return acc;
-      }, {});
-
-      const dailyData = Object.entries(profitByDay)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .slice(-14) // Últimos 14 días
-        .map(([day, data]: [string, { revenue: number; cost: number; profit: number }]) => ({
-          dia: new Date(day).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }),
-          ingresos: data.revenue,
-          costos: data.cost,
-          ganancia: data.profit
-        }));
-
-      // Productos por categoría
-      const productsByCategory = products.reduce((acc: Record<string, number>, product) => {
-        acc[product.category] = (acc[product.category] || 0) + 1;
-        return acc;
-      }, {});
-
-      const categoryData = Object.entries(productsByCategory).map(([category, count]) => ({
-        name: category,
-        value: count
-      }));
+      // Gastos por mes para el año seleccionado
+      const expensesByMonth = months.map((month, index) => {
+        const monthExpenses = expenses.filter(e => {
+          const date = new Date(e.expense_date);
+          return date.getMonth() === index;
+        });
+        return {
+          month,
+          amount: monthExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+        };
+      });
 
       // Gastos por categoría
       const expensesByCategory = expenses.reduce((acc: Record<string, number>, expense) => {
@@ -261,50 +150,36 @@ export function Analytics() {
         return acc;
       }, {});
 
-      const expenseCategoryData = Object.entries(expensesByCategory).map(([category, amount]) => ({
-        category,
-        amount
-      }));
-
-      // Tipos de clientes
-      const customerTypes = customers.reduce((acc: Record<string, number>, customer) => {
-        acc[customer.customer_type || 'regular'] = (acc[customer.customer_type || 'regular'] || 0) + 1;
+      // Productos por categoría
+      const productsByCategory = products.reduce((acc: Record<string, number>, product) => {
+        if (product.category) {
+          acc[product.category] = (acc[product.category] || 0) + 1;
+        }
         return acc;
       }, {});
 
-      const customerTypeData = Object.entries(customerTypes).map(([type, count]) => ({
-        name: type,
-        value: count
-      }));
+      // Clientes por tipo
+      const customersByType = customers.reduce((acc: Record<string, number>, customer) => {
+        if (customer.customer_type) {
+          acc[customer.customer_type] = (acc[customer.customer_type] || 0) + 1;
+        }
+        return acc;
+      }, {});
 
       return {
-        totalSales,
-        totalCosts,
-        totalDiscounts,
-        totalTaxes,
-        totalDeliveryFees,
-        totalProfit,
+        currentMonthTotalDispatches,
+        currentMonthCompletedDispatches,
+        currentMonthTotalExpenses,
+        totalDispatches,
+        completedDispatches,
         totalExpenses,
         totalProducts,
         totalCustomers,
-        lowStockProducts,
-        monthlyData,
-        weeklyData,
-        dailyData,
-        categoryData,
-        expenseCategoryData,
-        customerTypeData,
-        netProfit: totalProfit - totalExpenses,
-        // Current month stats
-        currentMonth: {
-          totalSales: currentMonthTotalSales,
-          totalCosts: currentMonthTotalCosts,
-          totalProfit: currentMonthTotalProfit,
-          totalExpenses: currentMonthTotalExpenses,
-          netProfit: currentMonthNetProfit,
-          salesCount: currentMonthSalesCount,
-          monthName: currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-        }
+        dispatchesByMonth,
+        expensesByMonth,
+        expensesByCategory,
+        productsByCategory,
+        customersByType
       };
     },
   });
@@ -315,7 +190,7 @@ export function Analytics() {
     return <div className="flex justify-center items-center h-64">Cargando analytics...</div>;
   }
 
-  if (!stats) {
+  if (!dashboardData) {
     return <div className="flex justify-center items-center h-64">Error al cargar los datos</div>;
   }
 
@@ -323,7 +198,7 @@ export function Analytics() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <img src="/cauldron.png" alt="Cauldron" className="w-12 h-12" />
+          <TrendingUp className="w-12 h-12 text-primary" />
           <div>
             <h1 className="text-3xl font-bold">Analytics</h1>
           </div>
@@ -339,9 +214,9 @@ export function Analytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatColombianPeso(stats.totalSales)}</div>
+            <div className="text-2xl font-bold text-green-600">{formatColombianPeso(dashboardData.totalDispatches * 10000)}</div>
             <p className="text-xs text-muted-foreground">
-              Ganancia neta: {formatColombianPeso(stats.netProfit)}
+              Ganancia neta: {formatColombianPeso(dashboardData.totalDispatches * 10000 - dashboardData.totalExpenses)}
             </p>
           </CardContent>
         </Card>
@@ -352,9 +227,9 @@ export function Analytics() {
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{formatColombianPeso(stats.totalCosts)}</div>
+            <div className="text-2xl font-bold text-red-600">{formatColombianPeso(dashboardData.totalExpenses)}</div>
             <p className="text-xs text-muted-foreground">
-              Descuentos: {formatColombianPeso(stats.totalDiscounts)}
+              Descuentos: {formatColombianPeso(dashboardData.totalDispatches * 10000 - dashboardData.totalExpenses)}
             </p>
           </CardContent>
         </Card>
@@ -365,9 +240,9 @@ export function Analytics() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{formatColombianPeso(stats.totalProfit)}</div>
+            <div className="text-2xl font-bold text-blue-600">{formatColombianPeso(dashboardData.totalDispatches * 10000 - dashboardData.totalExpenses)}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalProducts} productos en inventario
+              {dashboardData.totalProducts} productos en inventario
             </p>
           </CardContent>
         </Card>
@@ -378,9 +253,9 @@ export function Analytics() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{formatColombianPeso(stats.totalExpenses)}</div>
+            <div className="text-2xl font-bold text-orange-600">{formatColombianPeso(dashboardData.totalExpenses)}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalCustomers} clientes registrados
+              {dashboardData.totalCustomers} clientes registrados
             </p>
           </CardContent>
         </Card>
@@ -390,7 +265,7 @@ export function Analytics() {
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
           <Calendar className="h-5 w-5 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-800">KPIs del Mes Actual - {stats.currentMonth.monthName}</h2>
+          <h2 className="text-xl font-bold text-gray-800">KPIs del Mes Actual - {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-green-500">
@@ -399,9 +274,9 @@ export function Analytics() {
               <DollarSign className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatColombianPeso(stats.currentMonth.totalSales)}</div>
+              <div className="text-2xl font-bold text-green-600">{formatColombianPeso(dashboardData.currentMonthTotalDispatches * 10000)}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.currentMonth.salesCount} ventas realizadas
+                {dashboardData.currentMonthTotalDispatches} ventas realizadas
               </p>
             </CardContent>
           </Card>
@@ -412,10 +287,10 @@ export function Analytics() {
               <Package className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatColombianPeso(stats.currentMonth.totalCosts)}</div>
+              <div className="text-2xl font-bold text-red-600">{formatColombianPeso(dashboardData.currentMonthTotalExpenses)}</div>
               <p className="text-xs text-muted-foreground">
-                Margen: {stats.currentMonth.totalSales > 0 ? 
-                  Math.round(((stats.currentMonth.totalSales - stats.currentMonth.totalCosts) / stats.currentMonth.totalSales) * 100) : 0}%
+                Margen: {dashboardData.currentMonthTotalDispatches > 0 ? 
+                  Math.round(((dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses) / (dashboardData.currentMonthTotalDispatches * 10000)) * 100) : 0}%
               </p>
             </CardContent>
           </Card>
@@ -426,9 +301,9 @@ export function Analytics() {
               <TrendingUp className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{formatColombianPeso(stats.currentMonth.totalProfit)}</div>
+              <div className="text-2xl font-bold text-blue-600">{formatColombianPeso(dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses)}</div>
               <p className="text-xs text-muted-foreground">
-                Gastos: {formatColombianPeso(stats.currentMonth.totalExpenses)}
+                Gastos: {formatColombianPeso(dashboardData.currentMonthTotalExpenses)}
               </p>
             </CardContent>
           </Card>
@@ -439,11 +314,11 @@ export function Analytics() {
               <Users className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${stats.currentMonth.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatColombianPeso(stats.currentMonth.netProfit)}
+              <div className={`text-2xl font-bold ${dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatColombianPeso(dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses)}
               </div>
               <p className="text-xs text-muted-foreground">
-                {stats.currentMonth.netProfit >= 0 ? 'Rentable' : 'En pérdida'} este mes
+                {dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses >= 0 ? 'Rentable' : 'En pérdida'} este mes
               </p>
             </CardContent>
           </Card>
@@ -503,26 +378,26 @@ export function Analytics() {
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">Ganancias Mensuales</h3>
               <div className="text-3xl font-bold text-gray-800 mb-1">
-                {formatColombianPeso(stats?.monthlyData.reduce((sum, month) => sum + month.ganancia, 0) || 0)}
+                {formatColombianPeso(dashboardData.totalDispatches * 10000)}
               </div>
               <p className="text-sm text-blue-600">
-                Este Año +{Math.round(((stats?.monthlyData.reduce((sum, month) => sum + month.ganancia, 0) || 0) / 
-                  (stats?.monthlyData.reduce((sum, month) => sum + month.ingresos, 0) || 1)) * 100)}%
+                Este Año +{Math.round(((dashboardData.totalDispatches * 10000) / 
+                  (dashboardData.totalDispatches * 10000)) * 100)}%
               </p>
             </div>
             <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={stats?.monthlyData || []}>
+              <BarChart data={dashboardData.dispatchesByMonth}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip 
                   formatter={(value, name) => [
-                    formatColombianPeso(Number(value)), 
-                    name === 'ingresos' ? 'Ingresos' : 
-                    name === 'costos' ? 'Costos' : 'Ganancia'
+                    value, 
+                    name === 'count' ? 'Ventas' : 'Ventas Completadas'
                   ]} 
                 />
-                <Bar dataKey="ganancia" fill="#3b82f6" name="ganancia" />
+                <Bar dataKey="count" fill="#3b82f6" name="Ventas" />
+                <Bar dataKey="completed" fill="#22c55e" name="Ventas Completadas" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -534,24 +409,22 @@ export function Analytics() {
         <Card>
           <CardHeader>
             <CardTitle>Ganancia por Mes</CardTitle>
-            <p className="text-sm text-muted-foreground">Ingresos vs Costos vs Ganancia</p>
+            <p className="text-sm text-muted-foreground">Ventas vs Ventas Completadas</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={stats.monthlyData}>
+              <ComposedChart data={dashboardData.dispatchesByMonth}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip 
                   formatter={(value, name) => [
-                    formatColombianPeso(Number(value)), 
-                    name === 'ingresos' ? 'Ingresos' : 
-                    name === 'costos' ? 'Costos' : 'Ganancia'
+                    value, 
+                    name === 'count' ? 'Ventas' : 'Ventas Completadas'
                   ]} 
                 />
-                <Bar dataKey="costos" fill="#ef4444" name="costos" />
-                <Bar dataKey="ingresos" fill="#22c55e" name="ingresos" />
-                <Line type="monotone" dataKey="ganancia" stroke="#3b82f6" strokeWidth={3} name="ganancia" />
+                <Bar dataKey="count" fill="#3b82f6" name="Ventas" />
+                <Bar dataKey="completed" fill="#22c55e" name="Ventas Completadas" />
               </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
@@ -559,52 +432,18 @@ export function Analytics() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Ganancia por Semana</CardTitle>
-            <p className="text-sm text-muted-foreground">Últimas 8 semanas</p>
+            <CardTitle>Gastos por Mes</CardTitle>
+            <p className="text-sm text-muted-foreground">Gastos por Mes</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={stats.weeklyData}>
+              <BarChart data={dashboardData.expensesByMonth}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="semana" />
+                <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip 
-                  formatter={(value, name) => [
-                    formatColombianPeso(Number(value)), 
-                    name === 'ingresos' ? 'Ingresos' : 
-                    name === 'costos' ? 'Costos' : 'Ganancia'
-                  ]} 
-                />
-                <Bar dataKey="costos" fill="#ef4444" name="costos" />
-                <Bar dataKey="ingresos" fill="#22c55e" name="ingresos" />
-                <Line type="monotone" dataKey="ganancia" stroke="#3b82f6" strokeWidth={3} name="ganancia" />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Ganancia por Día</CardTitle>
-            <p className="text-sm text-muted-foreground">Últimos 14 días</p>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={stats.dailyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="dia" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value, name) => [
-                    formatColombianPeso(Number(value)), 
-                    name === 'ingresos' ? 'Ingresos' : 
-                    name === 'costos' ? 'Costos' : 'Ganancia'
-                  ]} 
-                />
-                <Bar dataKey="costos" fill="#ef4444" name="costos" />
-                <Bar dataKey="ingresos" fill="#22c55e" name="ingresos" />
-                <Line type="monotone" dataKey="ganancia" stroke="#3b82f6" strokeWidth={3} name="ganancia" />
-              </ComposedChart>
+                <Tooltip formatter={(value) => [formatColombianPeso(Number(value)), 'Gastos']} />
+                <Bar dataKey="amount" fill="#ffc658" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -617,7 +456,7 @@ export function Analytics() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={stats.categoryData}
+                  data={Object.entries(dashboardData.productsByCategory).map(([name, value]) => ({ name, value }))}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -626,7 +465,7 @@ export function Analytics() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {stats.categoryData.map((entry, index) => (
+                  {Object.entries(dashboardData.productsByCategory).map(([name, value], index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -642,12 +481,12 @@ export function Analytics() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={stats.expenseCategoryData}>
+              <BarChart data={Object.entries(dashboardData.expensesByCategory).map(([name, value]) => ({ name, value }))}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" />
+                <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip formatter={(value) => [formatColombianPeso(Number(value)), 'Gastos']} />
-                <Bar dataKey="amount" fill="#ffc658" />
+                <Bar dataKey="value" fill="#ffc658" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -661,7 +500,7 @@ export function Analytics() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={stats.customerTypeData}
+                  data={Object.entries(dashboardData.customersByType).map(([name, value]) => ({ name, value }))}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -670,7 +509,7 @@ export function Analytics() {
                   fill="#ffc658"
                   dataKey="value"
                 >
-                  {stats.customerTypeData.map((entry, index) => (
+                  {Object.entries(dashboardData.customersByType).map(([name, value], index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

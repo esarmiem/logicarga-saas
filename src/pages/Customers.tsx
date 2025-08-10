@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, Search, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Eye, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,7 +89,6 @@ export function Customers() {
 
   const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.document_number && customer.document_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
     customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -136,7 +135,7 @@ export function Customers() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div className="flex items-center space-x-4">
-          <img src="/magic-wand.png" alt="Magic Wand" className="w-12 h-12" />
+          <Users className="w-12 h-12 text-primary" />
           <div>
             <h1 className="text-3xl font-bold">Gestión de Clientes</h1>
           </div>
@@ -171,8 +170,6 @@ export function Customers() {
                 <TableHead>Email</TableHead>
                 <TableHead>Teléfono</TableHead>
                 <TableHead>Tipo</TableHead>
-                <TableHead>Tipo Doc</TableHead>
-                <TableHead>Número Doc</TableHead>
                 <TableHead>Compras Totales</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Acciones</TableHead>
@@ -189,8 +186,6 @@ export function Customers() {
                       {customer.customer_type}
                     </Badge>
                   </TableCell>
-                  <TableCell>{customer.document_type || 'N/A'}</TableCell>
-                  <TableCell>{customer.document_number || 'N/A'}</TableCell>
                   <TableCell>{formatColombianPeso(customer.total_purchases || 0)}</TableCell>
                   <TableCell>
                     <Badge variant={customer.is_active ? 'default' : 'destructive'}>

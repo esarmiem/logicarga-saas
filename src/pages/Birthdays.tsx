@@ -193,7 +193,7 @@ ${customer.email ? `Email: ${customer.email}` : 'Sin email'}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <img src="/voodoo.png" alt="Voodoo" className="w-12 h-12" />
+          <Gift className="w-12 h-12 text-primary" />
           <div>
             <h1 className="text-3xl font-bold text-foreground">Cumpleaños</h1>
             <p className="text-muted-foreground">Gestiona y celebra los cumpleaños de tus clientes</p>

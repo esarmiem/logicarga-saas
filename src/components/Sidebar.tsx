@@ -10,18 +10,25 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Calendar
+  Calendar,
+  MapPin,
+  Warehouse,
+  ClipboardList,
+  CheckSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Productos', href: '/productos', icon: Package },
+  { name: 'Inventario', href: '/inventario', icon: Warehouse },
+  { name: 'Packing Lists', href: '/packing-lists', icon: ClipboardList },
+  { name: 'Verificación', href: '/verificacion', icon: CheckSquare },
   { name: 'Clientes', href: '/clientes', icon: Users },
-  { name: 'Ventas', href: '/ventas', icon: ShoppingCart },
+  { name: 'Despachos', href: '/despachos', icon: ShoppingCart },
   { name: 'Gastos', href: '/gastos', icon: FileText },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Cumpleaños', href: '/cumpleanos', icon: Calendar },
+  { name: 'Ubicaciones', href: '/ubicaciones', icon: MapPin },
 ];
 
 // Función para detectar si es mobile o tablet
@@ -59,15 +66,15 @@ export function Sidebar() {
         {!collapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-magia-zinc to-magia-zinc-200 rounded-lg flex items-center justify-center">
-              <img 
+              {/*<img 
                 src="/witch-hat.png" 
                 alt="Magia Interna Logo" 
                 className="w-6 h-6 object-contain rounded-sm"
-              />
+              />*/}
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-foreground">Magia Interna</h1>
-              <p className="text-xs text-muted-foreground">Gestión Textil</p>
+              <h1 className="text-lg font-semibold text-foreground">Logi Carga</h1>
+              <p className="text-xs text-muted-foreground">WMS</p>
             </div>
           </div>
         )}
@@ -112,13 +119,13 @@ export function Sidebar() {
       {!collapsed && (
         <div className="p-4 border-t border-border">
           <div className="flex items-center justify-center mb-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-magia-purple to-magia-gold rounded-lg flex items-center justify-center">
+            {/*<div className="w-12 h-12 bg-gradient-to-br from-magia-purple to-magia-gold rounded-lg flex items-center justify-center">
               <img 
                 src="/magiainternalogo.webp" 
                 alt="Magia Interna Logo" 
                 className="w-12 h-12 object-contain rounded-xl p-1"
               />
-            </div>
+            </div>*/}
           </div>
           <div className="flex items-center space-x-2 text-xs text-muted-foreground">
             <div className="w-2 h-2 bg-magia-success rounded-full"></div>

@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { AlertCircle } from "lucide-react";
 
 const NotFound = () => {
   const location = useLocation();
@@ -14,7 +15,7 @@ const NotFound = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="text-center">
-      <img src="/black-cat.png" alt="Crystal Ball" className="w-12 h-12 mx-auto mb-6 animate-fade-in" />
+        <AlertCircle className="w-12 h-12 mx-auto mb-6 animate-fade-in text-red-500" />
         <h1 className="text-4xl font-bold mb-4 animate-fade-in">404</h1>
         <p className="text-xl text-gray-600 mb-4 animate-fade-in">Oops! Pagina no encontrada</p>
         <a href="/" className="text-blue-500 hover:text-blue-700 underline animate-fade-in">

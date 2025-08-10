@@ -8,7 +8,6 @@ import {
   Edit, 
   Trash2, 
   Filter,
-  AlertTriangle,
   Eye
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,27 +40,13 @@ import {
 } from '@/components/ui/pagination';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductForm } from '@/components/products/ProductForm';
-import { ProductDetails } from '@/components/products/ProductDetails';
+// ProductDetails is not adapted yet, so we comment it out to avoid errors
+// import { ProductDetails } from '@/components/products/ProductDetails'; 
 import { toast } from '@/hooks/use-toast';
-import { formatColombianPeso } from '@/lib/currency';
+import type { Tables } from '@/integrations/supabase/types';
 
-interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  cost: number;
-  sku: string;
-  category: string;
-  size: string | null;
-  color: string | null;
-  stock_quantity: number;
-  min_stock: number;
-  image_url: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+// Use the specific type from generated types for Product Templates
+type Product = Tables<'products'>;
 
 const ITEMS_PER_PAGE = 10;
 
@@ -70,14 +55,14 @@ export function Products() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  // const [viewingProduct, setViewingProduct] = useState<Product | null>(null); // Commented out as details view is not ready
   const [currentPage, setCurrentPage] = useState(1);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch products
-  const { data: products, isLoading, error } = useQuery({
+  const { data: products, isLoading, error } = useQuery<Product[]>({ // Added type assertion here
     queryKey: ['products'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -86,13 +71,25 @@ export function Products() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Product[];
+      return data || [];
     },
   });
 
   // Delete product mutation
   const deleteProductMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Before deleting a product, check if it has associated inventory items
+      const { data: items, error: checkError } = await supabase
+        .from('inventory_items')
+        .select('id')
+        .eq('product_id', id)
+        .limit(1);
+
+      if (checkError) throw new Error("Error al verificar el inventario: " + checkError.message);
+      if (items && items.length > 0) {
+        throw new Error('No se puede eliminar. Hay items de inventario asociados a esta plantilla.');
+      }
+
       const { error } = await supabase
         .from('products')
         .delete()
@@ -103,8 +100,8 @@ export function Products() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast({
-        title: "Producto eliminado",
-        description: "El producto ha sido eliminado exitosamente.",
+        title: "Plantilla eliminada",
+        description: "La plantilla de producto ha sido eliminada exitosamente.",
       });
       setShowDeleteDialog(false);
       setProductToDelete(null);
@@ -112,7 +109,7 @@ export function Products() {
     onError: (error) => {
       toast({
         title: "Error",
-        description: "No se pudo eliminar el producto. " + error.message,
+        description: error.message,
         variant: "destructive",
       });
       setShowDeleteDialog(false);
@@ -133,17 +130,16 @@ export function Products() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const categories = [...new Set(products?.map(p => p.category) || [])];
-  const lowStockProducts = products?.filter(p => p.stock_quantity <= p.min_stock) || [];
+  const categories = [...new Set(products?.map(p => p.category).filter(Boolean) as string[])];
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setShowForm(true);
   };
 
-  const handleView = (product: Product) => {
-    setViewingProduct(product);
-  };
+  // const handleView = (product: Product) => {
+  //   setViewingProduct(product);
+  // };
 
   const handleDelete = (product: Product) => {
     setProductToDelete(product);
@@ -155,9 +151,9 @@ export function Products() {
     setEditingProduct(null);
   };
 
-  const handleCloseDetails = () => {
-    setViewingProduct(null);
-  };
+  // const handleCloseDetails = () => {
+  //   setViewingProduct(null);
+  // };
 
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= totalPages) {
@@ -170,7 +166,7 @@ export function Products() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Package className="w-8 h-8 animate-spin mx-auto mb-2" />
-          <p className="text-muted-foreground">Cargando productos...</p>
+          <p className="text-muted-foreground">Cargando plantillas de producto...</p>
         </div>
       </div>
     );
@@ -179,9 +175,8 @@ export function Products() {
   if (error) {
     return (
       <div className="text-center p-8">
-        <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Error al cargar productos</h3>
-        <p className="text-muted-foreground">No se pudieron cargar los productos. Intente nuevamente.</p>
+        <h3 className="text-lg font-semibold mb-2">Error al cargar plantillas</h3>
+        <p className="text-muted-foreground">{error.message}</p>
       </div>
     );
   }
@@ -191,27 +186,27 @@ export function Products() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div className="flex items-center space-x-4">
-          <img src="/flying-broom.png" alt="Flying Broom" className="w-12 h-12" />
+          <Package className="w-12 h-12 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">Productos</h1>
+            <h1 className="text-3xl font-bold">Plantillas de Productos</h1>
             <p className="text-muted-foreground">
-              Gestiona tu inventario de productos textiles
+              Gestiona las plantillas para rollos de tela y tanques IBC.
             </p>
           </div>
         </div>
         <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2 mt-4 md:mt-0">
           <Plus className="w-4 h-4" />
-          <span>Nuevo Producto</span>
+          <span>Nueva Plantilla</span>
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Productos</p>
+                <p className="text-sm text-muted-foreground">Total Plantillas</p>
                 <p className="text-2xl font-bold">{products?.length || 0}</p>
               </div>
               <Package className="w-8 h-8 text-primary" />
@@ -223,22 +218,10 @@ export function Products() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Productos Activos</p>
+                <p className="text-sm text-muted-foreground">Plantillas Activas</p>
                 <p className="text-2xl font-bold">{products?.filter(p => p.is_active).length || 0}</p>
               </div>
               <div className="w-3 h-3 bg-green-500 rounded-full" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Stock Bajo</p>
-                <p className="text-2xl font-bold text-orange-600">{lowStockProducts.length}</p>
-              </div>
-              <AlertTriangle className="w-8 h-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -292,7 +275,7 @@ export function Products() {
       {/* Products Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Productos</CardTitle>
+          <CardTitle>Lista de Plantillas</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -301,8 +284,7 @@ export function Products() {
                 <TableHead>Producto</TableHead>
                 <TableHead>SKU</TableHead>
                 <TableHead>Categoría</TableHead>
-                <TableHead>Precio</TableHead>
-                <TableHead>Stock</TableHead>
+                <TableHead>Tipo de Producto</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
@@ -311,27 +293,14 @@ export function Products() {
               {paginatedProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {product.size && `Talla: ${product.size}`}
-                        {product.size && product.color && ' • '}
-                        {product.color && `Color: ${product.color}`}
-                      </p>
-                    </div>
+                    <p className="font-medium">{product.name}</p>
                   </TableCell>
                   <TableCell className="font-mono text-sm">{product.sku}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>{formatColombianPeso(product.price)}</TableCell>
+                  <TableCell>{product.category || 'N/A'}</TableCell>
                   <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <span className={product.stock_quantity <= product.min_stock ? 'text-orange-600 font-medium' : ''}>
-                        {product.stock_quantity}
-                      </span>
-                      {product.stock_quantity <= product.min_stock && (
-                        <AlertTriangle className="w-4 h-4 text-orange-600" />
-                      )}
-                    </div>
+                    <Badge variant="outline">
+                      {product.product_type === 'rollo_tela' ? 'Rollo de Tela' : 'Tanque IBC'}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={product.is_active ? 'default' : 'secondary'}>
@@ -343,7 +312,8 @@ export function Products() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleView(product)}
+                        disabled // Disabled until details view is adapted
+                        // onClick={() => handleView(product)}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -372,11 +342,11 @@ export function Products() {
           {filteredProducts.length === 0 && (
             <div className="text-center py-8">
               <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No se encontraron productos</h3>
+              <h3 className="text-lg font-semibold mb-2">No se encontraron plantillas</h3>
               <p className="text-muted-foreground">
                 {searchTerm || selectedCategory 
                   ? 'Intenta ajustar los filtros de búsqueda' 
-                  : 'Comienza agregando tu primer producto'
+                  : 'Comienza agregando tu primera plantilla de producto'
                 }
               </p>
             </div>
@@ -436,13 +406,13 @@ export function Products() {
         />
       )}
 
-      {/* Product Details Modal */}
-      {viewingProduct && (
+      {/* Product Details Modal - Temporarily disabled */}
+      {/* {viewingProduct && (
         <ProductDetails
           product={viewingProduct}
           onClose={handleCloseDetails}
         />
-      )}
+      )} */}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -450,7 +420,7 @@ export function Products() {
           <DialogHeader>
             <DialogTitle>¿Estás seguro?</DialogTitle>
             <DialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el producto.
+              Esta acción no se puede deshacer. Esto eliminará permanentemente la plantilla de producto. Asegúrate de que no haya items de inventario asociados.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -464,8 +434,9 @@ export function Products() {
                   deleteProductMutation.mutate(productToDelete.id);
                 }
               }}
+              disabled={deleteProductMutation.isPending}
             >
-              Eliminar
+              {deleteProductMutation.isPending ? 'Eliminando...' : 'Eliminar'}
             </Button>
           </DialogFooter>
         </DialogContent>

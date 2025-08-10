@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, Search, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Eye, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -138,7 +138,7 @@ export function Expenses() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div className="flex items-center space-x-4">
-          <img src="/crystal-ball.png" alt="Crystal Ball" className="w-12 h-12" />
+          <DollarSign className="w-12 h-12 text-primary" />
           <div>
             <h1 className="text-3xl font-bold">Gestión de Gastos</h1>
           </div>
