@@ -27,31 +27,31 @@ export function CustomerDetails({ customer, onClose }: CustomerDetailsProps) {
         <CardContent className="space-y-6">
           {/* Información Personal */}
           <div>
-            <h3 className="text-lg font-semibold mb-3 text-blue-600">Información Personal</h3>
+            <h3 className="text-lg font-semibold mb-3 text-primary">Información Personal</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div>
-                  <span className="font-medium text-gray-700">Nombre:</span>
-                  <p className="text-gray-900">{customer.name}</p>
+                  <span className="font-medium text-muted-foreground">Nombre:</span>
+                  <p className="text-foreground">{customer.name}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Email:</span>
-                  <p className="text-gray-900">{customer.email || 'No especificado'}</p>
+                  <span className="font-medium text-muted-foreground">Email:</span>
+                  <p className="text-foreground">{customer.email || 'No especificado'}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Teléfono:</span>
-                  <p className="text-gray-900">{customer.phone || 'No especificado'}</p>
+                  <span className="font-medium text-muted-foreground">Teléfono:</span>
+                  <p className="text-foreground">{customer.phone || 'No especificado'}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Fecha de Nacimiento:</span>
-                  <p className="text-gray-900">
+                  <span className="font-medium text-muted-foreground">Fecha de Nacimiento:</span>
+                  <p className="text-foreground">
                     {formatBirthDate(customer.birth_date)}
                   </p>
                 </div>
               </div>
               <div className="space-y-2">
                 <div>
-                  <span className="font-medium text-gray-700">Tipo de Cliente:</span>
+                  <span className="font-medium text-muted-foreground">Tipo de Cliente:</span>
                   <div className="mt-1">
                     <Badge variant={customer.customer_type === 'premium' ? 'default' : 'secondary'}>
                       {customer.customer_type || 'regular'}
@@ -59,7 +59,7 @@ export function CustomerDetails({ customer, onClose }: CustomerDetailsProps) {
                   </div>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Estado:</span>
+                  <span className="font-medium text-muted-foreground">Estado:</span>
                   <div className="mt-1">
                     <Badge variant={customer.is_active ? 'default' : 'destructive'}>
                       {customer.is_active ? 'Activo' : 'Inactivo'}
@@ -67,14 +67,14 @@ export function CustomerDetails({ customer, onClose }: CustomerDetailsProps) {
                   </div>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Total de Compras:</span>
-                  <p className="text-gray-900 font-semibold">
+                  <span className="font-medium text-muted-foreground">Total de Compras:</span>
+                  <p className="text-foreground font-semibold">
                     {formatColombianPeso(customer.total_purchases || 0)}
                   </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Última Compra:</span>
-                  <p className="text-gray-900">
+                  <span className="font-medium text-muted-foreground">Última Compra:</span>
+                  <p className="text-foreground">
                     {customer.last_purchase_date 
                       ? format(new Date(customer.last_purchase_date), 'dd/MM/yyyy HH:mm')
                       : 'Sin compras registradas'
@@ -84,45 +84,42 @@ export function CustomerDetails({ customer, onClose }: CustomerDetailsProps) {
               </div>
             </div>
           </div>
-
           {/* Información de Dirección */}
           <div>
-            <h3 className="text-lg font-semibold mb-3 text-green-600">Información de Dirección</h3>
+            <h3 className="text-lg font-semibold mb-3 text-primary">Información de Dirección</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <span className="font-medium text-gray-700">Dirección:</span>
-                <p className="text-gray-900">{customer.address || 'No especificada'}</p>
+                <span className="font-medium text-muted-foreground">Dirección:</span>
+                <p className="text-foreground">{customer.address || 'No especificada'}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Ciudad:</span>
-                <p className="text-gray-900">{customer.city || 'No especificada'}</p>
+                <span className="font-medium text-muted-foreground">Ciudad:</span>
+                <p className="text-foreground">{customer.city || 'No especificada'}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Código Postal:</span>
-                <p className="text-gray-900">{customer.postal_code || 'No especificado'}</p>
+                <span className="font-medium text-muted-foreground">Código Postal:</span>
+                <p className="text-foreground">{customer.postal_code || 'No especificado'}</p>
               </div>
             </div>
           </div>
-
           {/* Información del Sistema */}
           <div>
-            <h3 className="text-lg font-semibold mb-3 text-purple-600">Información del Sistema</h3>
+            <h3 className="text-lg font-semibold mb-3 text-primary">Información del Sistema</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <span className="font-medium text-gray-700">Fecha de Creación:</span>
-                <p className="text-gray-900">
+                <span className="font-medium text-muted-foreground">Fecha de Creación:</span>
+                <p className="text-foreground">
                   {format(new Date(customer.created_at), 'dd/MM/yyyy HH:mm')}
                 </p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Última Actualización:</span>
-                <p className="text-gray-900">
+                <span className="font-medium text-muted-foreground">Última Actualización:</span>
+                <p className="text-foreground">
                   {format(new Date(customer.updated_at), 'dd/MM/yyyy HH:mm')}
                 </p>
               </div>
             </div>
           </div>
-
           <div className="flex justify-end pt-4">
             <Button onClick={onClose}>Cerrar</Button>
           </div>
@@ -130,4 +127,4 @@ export function CustomerDetails({ customer, onClose }: CustomerDetailsProps) {
       </Card>
     </div>
   );
-} 
+}

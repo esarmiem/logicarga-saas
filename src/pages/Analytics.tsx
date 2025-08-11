@@ -200,7 +200,7 @@ export function Analytics() {
         <div className="flex items-center space-x-4">
           <TrendingUp className="w-12 h-12 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">Analytics</h1>
+            <h1 className="text-3xl font-bold">Analíticas</h1>
           </div>
         </div>
         <Calendar className="h-6 w-6 text-muted-foreground" />
@@ -214,7 +214,7 @@ export function Analytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatColombianPeso(dashboardData.totalDispatches * 10000)}</div>
+            <div className="text-2xl font-bold text-primary">{formatColombianPeso(dashboardData.totalDispatches * 10000)}</div>
             <p className="text-xs text-muted-foreground">
               Ganancia neta: {formatColombianPeso(dashboardData.totalDispatches * 10000 - dashboardData.totalExpenses)}
             </p>
@@ -227,7 +227,7 @@ export function Analytics() {
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{formatColombianPeso(dashboardData.totalExpenses)}</div>
+            <div className="text-2xl font-bold text-primary">{formatColombianPeso(dashboardData.totalExpenses)}</div>
             <p className="text-xs text-muted-foreground">
               Descuentos: {formatColombianPeso(dashboardData.totalDispatches * 10000 - dashboardData.totalExpenses)}
             </p>
@@ -240,7 +240,7 @@ export function Analytics() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{formatColombianPeso(dashboardData.totalDispatches * 10000 - dashboardData.totalExpenses)}</div>
+            <div className="text-2xl font-bold text-primary">{formatColombianPeso(dashboardData.totalDispatches * 10000 - dashboardData.totalExpenses)}</div>
             <p className="text-xs text-muted-foreground">
               {dashboardData.totalProducts} productos en inventario
             </p>
@@ -253,7 +253,7 @@ export function Analytics() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{formatColombianPeso(dashboardData.totalExpenses)}</div>
+            <div className="text-2xl font-bold text-primary">{formatColombianPeso(dashboardData.totalExpenses)}</div>
             <p className="text-xs text-muted-foreground">
               {dashboardData.totalCustomers} clientes registrados
             </p>
@@ -264,30 +264,30 @@ export function Analytics() {
       {/* KPIs del Mes Actual */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
-          <Calendar className="h-5 w-5 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-800">KPIs del Mes Actual - {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</h2>
+          <Calendar className="h-5 w-5" />
+          <h2 className="text-xl font-bold">KPIs del Mes Actual - {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-green-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Ingresos del Mes</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-500" />
+              <DollarSign className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatColombianPeso(dashboardData.currentMonthTotalDispatches * 10000)}</div>
+              <div className="text-2xl font-bold text-primary">{formatColombianPeso(dashboardData.currentMonthTotalDispatches * 10000)}</div>
               <p className="text-xs text-muted-foreground">
                 {dashboardData.currentMonthTotalDispatches} ventas realizadas
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-red-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Costos del Mes</CardTitle>
-              <Package className="h-4 w-4 text-red-500" />
+              <Package className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatColombianPeso(dashboardData.currentMonthTotalExpenses)}</div>
+              <div className="text-2xl font-bold text-primary">{formatColombianPeso(dashboardData.currentMonthTotalExpenses)}</div>
               <p className="text-xs text-muted-foreground">
                 Margen: {dashboardData.currentMonthTotalDispatches > 0 ? 
                   Math.round(((dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses) / (dashboardData.currentMonthTotalDispatches * 10000)) * 100) : 0}%
@@ -295,26 +295,26 @@ export function Analytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Ganancia del Mes</CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-500" />
+              <TrendingUp className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{formatColombianPeso(dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses)}</div>
+              <div className="text-2xl font-bold text-primary">{formatColombianPeso(dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses)}</div>
               <p className="text-xs text-muted-foreground">
                 Gastos: {formatColombianPeso(dashboardData.currentMonthTotalExpenses)}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-purple-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Ganancia Neta Mensual</CardTitle>
-              <Users className="h-4 w-4 text-purple-500" />
+              <Users className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`text-2xl font-bold ${dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses >= 0 ? 'text-primary' : 'text-primary'}`}>
                 {formatColombianPeso(dashboardData.currentMonthTotalDispatches * 10000 - dashboardData.currentMonthTotalExpenses)}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -330,7 +330,7 @@ export function Analytics() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
             <div>
-              <CardTitle className="text-xl sm:text-2xl font-bold text-gray-800">Ganancias</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl font-bold">Ganancias</CardTitle>
               <div className="flex items-center space-x-2 mt-2">
                 <label className="text-sm font-medium">Año</label>
                 <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
@@ -376,11 +376,11 @@ export function Analytics() {
         <CardContent>
           <div ref={contentRef} className="p-4">
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Ganancias Mensuales</h3>
-              <div className="text-3xl font-bold text-gray-800 mb-1">
+              <h3 className="text-lg font-semibold mb-2">Ganancias Mensuales</h3>
+              <div className="text-3xl font-bold text-primary mb-1">
                 {formatColombianPeso(dashboardData.totalDispatches * 10000)}
               </div>
-              <p className="text-sm text-blue-600">
+              <p className="text-sm">
                 Este Año +{Math.round(((dashboardData.totalDispatches * 10000) / 
                   (dashboardData.totalDispatches * 10000)) * 100)}%
               </p>

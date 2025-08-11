@@ -26,9 +26,8 @@ const navigation = [
   { name: 'Verificación', href: '/verificacion', icon: CheckSquare },
   { name: 'Clientes', href: '/clientes', icon: Users },
   { name: 'Despachos', href: '/despachos', icon: ShoppingCart },
-  { name: 'Gastos', href: '/gastos', icon: FileText },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Ubicaciones', href: '/ubicaciones', icon: MapPin },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
 ];
 
 // Función para detectar si es mobile o tablet
@@ -126,10 +125,6 @@ export function Sidebar() {
                 className="w-12 h-12 object-contain rounded-xl p-1"
               />
             </div>*/}
-          </div>
-          <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-            <div className="w-2 h-2 bg-magia-success rounded-full"></div>
-            <span>Sistema activo</span>
           </div>
         </div>
       )}

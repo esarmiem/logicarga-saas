@@ -103,16 +103,16 @@ export function Locations() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div className="flex items-center space-x-4">
-          <MapPin className="w-10 h-10 text-primary" />
+          <MapPin className="w-12 h-12 text-primary" />
           <div>
             <h1 className="text-3xl font-bold">Gestión de Ubicaciones</h1>
             <p className="text-muted-foreground">Define las coordenadas del almacén.</p>
           </div>
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2 mt-4 md:mt-0">
+          <Plus className="h-4 w-4" />
           Nueva Ubicación
         </Button>
       </div>

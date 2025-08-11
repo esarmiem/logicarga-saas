@@ -1,73 +1,96 @@
-import { 
-  LayoutDashboard, 
-  Package, 
-  CheckSquare, 
-  Truck, 
-  MapPin, 
-  Clock
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { StatCard } from '@/components/ui/stat-card';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
+import {
+  LayoutDashboard,
+  Package,
+  CheckSquare,
+  Truck,
+  MapPin,
+  Clock,
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { StatCard } from "@/components/ui/stat-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 export function Dashboard() {
   const navigate = useNavigate();
 
   const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ['wms_dashboard'],
+    queryKey: ["wms_dashboard"],
     queryFn: async () => {
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const today = format(new Date(), "yyyy-MM-dd");
 
       const [
         { count: availableItems },
         { count: pendingVerificationItems },
         { count: dispatchesToday },
         { count: locationsCount },
-        { data: recentPendingItems }
+        { data: recentPendingItems },
       ] = await Promise.all([
-        supabase.from('inventory_items').select('id', { count: 'exact' }).eq('status', 'disponible'),
-        supabase.from('inventory_items').select('id', { count: 'exact' }).eq('status', 'en_verificacion'),
-        supabase.from('dispatches').select('id', { count: 'exact' }).gte('dispatch_date', today),
-        supabase.from('locations').select('id', { count: 'exact' }),
-        supabase.from('inventory_items').select('serial_number, created_at, products(name)').eq('status', 'en_verificacion').order('created_at', { ascending: true }).limit(5)
+        supabase
+          .from("inventory_items")
+          .select("id", { count: "exact" })
+          .eq("status", "disponible"),
+        supabase
+          .from("inventory_items")
+          .select("id", { count: "exact" })
+          .eq("status", "en_verificacion"),
+        supabase
+          .from("dispatches")
+          .select("id", { count: "exact" })
+          .gte("dispatch_date", today),
+        supabase.from("locations").select("id", { count: "exact" }),
+        supabase
+          .from("inventory_items")
+          .select("serial_number, created_at, products(name)")
+          .eq("status", "en_verificacion")
+          .order("created_at", { ascending: true })
+          .limit(5),
       ]);
 
-      return { availableItems, pendingVerificationItems, dispatchesToday, locationsCount, recentPendingItems };
+      return {
+        availableItems,
+        pendingVerificationItems,
+        dispatchesToday,
+        locationsCount,
+        recentPendingItems,
+      };
     },
   });
 
   const stats = [
     {
-      title: 'Items Disponibles',
+      title: "Items Disponibles",
       value: dashboardData?.availableItems ?? 0,
-      change: 'Listos para despachar',
-      changeType: 'positive' as const,
-      icon: Package
+      change: "Listos para despachar",
+      changeType: "positive" as const,
+      icon: Package,
     },
     {
-      title: 'Pend. Verificación',
+      title: "Pend. Verificación",
       value: dashboardData?.pendingVerificationItems ?? 0,
-      change: 'Esperando ubicación',
-      changeType: (dashboardData?.pendingVerificationItems ?? 0) > 0 ? 'neutral' as const : 'positive' as const,
-      icon: CheckSquare
+      change: "Esperando ubicación",
+      changeType:
+        (dashboardData?.pendingVerificationItems ?? 0) > 0
+          ? ("neutral" as const)
+          : ("positive" as const),
+      icon: CheckSquare,
     },
     {
-      title: 'Despachos de Hoy',
+      title: "Despachos de Hoy",
       value: dashboardData?.dispatchesToday ?? 0,
       change: `En la fecha de hoy`,
-      changeType: 'positive' as const,
-      icon: Truck
+      changeType: "positive" as const,
+      icon: Truck,
     },
     {
-      title: 'Ubicaciones Totales',
+      title: "Ubicaciones Totales",
       value: dashboardData?.locationsCount ?? 0,
-      change: 'Coordenadas en almacén',
-      changeType: 'neutral' as const,
-      icon: MapPin
-    }
+      change: "Coordenadas en almacén",
+      changeType: "neutral" as const,
+      icon: MapPin,
+    },
   ];
 
   const handleQuickAction = (path: string) => {
@@ -80,7 +103,9 @@ export function Dashboard() {
         <LayoutDashboard className="w-12 h-12 text-primary" />
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard WMS</h1>
-          <p className="text-muted-foreground">Resumen operativo de Logicarga</p>
+          <p className="text-muted-foreground">
+            Resumen operativo de Logicarga
+          </p>
         </div>
       </div>
 
@@ -105,14 +130,24 @@ export function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {dashboardData?.recentPendingItems && dashboardData.recentPendingItems.length > 0 ? (
+            {dashboardData?.recentPendingItems &&
+            dashboardData.recentPendingItems.length > 0 ? (
               dashboardData.recentPendingItems.map((item) => (
-                <div key={item.serial_number} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                <div
+                  key={item.serial_number}
+                  className="flex items-center justify-between p-2 rounded-md bg-muted/50"
+                >
                   <div>
-                    <p className="font-mono text-sm font-semibold">{item.serial_number}</p>
-                    <p className="text-xs text-muted-foreground">{item.products?.name}</p>
+                    <p className="font-mono text-sm font-semibold">
+                      {item.serial_number}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.products?.name}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">Registrado {format(new Date(item.created_at), 'dd/MM/yyyy')}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Registrado {format(new Date(item.created_at), "dd/MM/yyyy")}
+                  </p>
                 </div>
               ))
             ) : (
@@ -129,14 +164,14 @@ export function Dashboard() {
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
             {[
-              { name: 'Verificar Ingreso', path: '/verificacion', color: 'bg-blue-600' },
-              { name: 'Nuevo Despacho', path: '/despachos', color: 'bg-green-600' },
-              { name: 'Ver Inventario', path: '/inventario', color: 'bg-purple-600' },
-              { name: 'Gestionar Ubicaciones', path: '/ubicaciones', color: 'bg-orange-600' }
+              { name: "Verificar Ingreso", path: "/verificacion" },
+              { name: "Nuevo Despacho", path: "/despachos" },
+              { name: "Ver Inventario", path: "/inventario" },
+              { name: "Gestionar Ubicaciones", path: "/ubicaciones" },
             ].map((action) => (
               <button
                 key={action.name}
-                className={`${action.color} text-white p-4 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity text-center`}
+                className="bg-primary text-primary-foreground p-4 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity text-center"
                 onClick={() => handleQuickAction(action.path)}
               >
                 {action.name}
