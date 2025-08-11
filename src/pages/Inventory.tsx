@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Warehouse, Search, Filter, Move } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { supabase } from '@/integrations/supabase/client';
 import { MovementForm } from '@/components/inventory/MovementForm';
 import type { Tables } from '@/integrations/supabase/types';
@@ -18,6 +25,8 @@ type InventoryItem = Tables<'inventory_items'> & {
   locations: Pick<Tables<'locations'>, 'aisle' | 'rack' | 'level' | 'position'> | null;
 };
 
+const ITEMS_PER_PAGE = 15;
+
 const formatLocation = (location: InventoryItem['locations']) => {
   if (!location) return 'Sin ubicación';
   return `${location.aisle}-${location.rack}-${location.level}-${location.position}`;
@@ -27,12 +36,13 @@ export function Inventory() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<InventoryItem['status'] | 'all'>('all');
   const [itemToMove, setItemToMove] = useState<InventoryItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
 
-  const { data: inventoryItems, isLoading, error } = useQuery<InventoryItem[]>({ 
-    queryKey: ['inventory_items', { searchTerm, statusFilter }],
+  const { data: inventoryItems = [], isLoading, error } = useQuery<InventoryItem[]>({ 
+    queryKey: ['inventory_items'], // Simplified query key
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('inventory_items')
         .select(`
           *,
@@ -41,20 +51,41 @@ export function Inventory() {
         `)
         .order('created_at', { ascending: false });
 
-      if (statusFilter && statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      if (searchTerm) {
-        query = query.or(`serial_number.ilike.%${searchTerm}%,products.name.ilike.%${searchTerm}%,products.sku.ilike.%${searchTerm}%`);
-      }
-
-      const { data, error } = await query;
-
       if (error) throw error;
       return data as InventoryItem[];
     },
   });
+
+  const filteredItems = useMemo(() => {
+    let items = inventoryItems;
+
+    if (statusFilter && statusFilter !== 'all') {
+      items = items.filter(item => item.status === statusFilter);
+    }
+
+    if (searchTerm) {
+      const lowercasedFilter = searchTerm.toLowerCase();
+      items = items.filter(item => 
+        item.serial_number.toLowerCase().includes(lowercasedFilter) ||
+        item.products?.name.toLowerCase().includes(lowercasedFilter) ||
+        item.products?.sku.toLowerCase().includes(lowercasedFilter)
+      );
+    }
+
+    return items;
+  }, [inventoryItems, searchTerm, statusFilter]);
+
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    if (page > 0 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   const statusOptions = ['en_verificacion', 'disponible', 'reservado', 'despachado', 'dado_de_baja'];
 
@@ -101,13 +132,19 @@ export function Inventory() {
               <Input
                 placeholder="Buscar por N/S, Nombre de producto o SKU..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1); // Reset to first page on new search
+                }}
                 className="pl-10"
               />
             </div>
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Select value={statusFilter} onValueChange={(value: InventoryItem['status'] | 'all') => setStatusFilter(value)}>
+              <Select value={statusFilter} onValueChange={(value: InventoryItem['status'] | 'all') => {
+                setStatusFilter(value)
+                setCurrentPage(1); // Reset to first page on new filter
+              }}>
                 <SelectTrigger className="pl-10">
                   <SelectValue placeholder="Filtrar por estado..." />
                 </SelectTrigger>
@@ -134,7 +171,7 @@ export function Inventory() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {inventoryItems?.map((item) => (
+              {paginatedItems.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-mono">{item.serial_number}</TableCell>
                   <TableCell>
@@ -160,6 +197,45 @@ export function Inventory() {
           </Table>
         </CardContent>
       </Card>
+
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handlePageChange(currentPage - 1);
+                }}
+              />
+            </PaginationItem>
+            {[...Array(totalPages)].map((_, i) => (
+              <PaginationItem key={i}>
+                <PaginationLink
+                  href="#"
+                  isActive={currentPage === i + 1}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePageChange(i + 1);
+                  }}
+                >
+                  {i + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handlePageChange(currentPage + 1);
+                }}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
 
       {itemToMove && (
         <MovementForm 
