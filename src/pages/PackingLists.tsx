@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ClipboardList, Plus } from 'lucide-react';
+import { ClipboardList, Plus, Eye, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,14 +9,16 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { PackingListForm } from '@/components/packing-lists/PackingListForm';
+import { PackingListDetails } from '@/components/packing-lists/PackingListDetails';
 import { format } from 'date-fns';
 
 type PackingList = Tables<'packing_lists'>;
 
 export function PackingLists() {
   const [showForm, setShowForm] = useState(false);
+  const [selectedPackingList, setSelectedPackingList] = useState<PackingList | null>(null);
 
-  const { data: packingLists, isLoading, error } = useQuery<PackingList[]>({ 
+  const { data: packingLists, isLoading, error } = useQuery<PackingList[]>({
     queryKey: ['packing_lists'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -27,6 +29,20 @@ export function PackingLists() {
       return data || [];
     },
   });
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'completado':
+        return 'default';
+      case 'procesando':
+        return 'secondary';
+      case 'discrepancia':
+        return 'destructive';
+      case 'pendiente':
+      default:
+        return 'outline';
+    }
+  };
 
   if (isLoading) return <p>Cargando packing lists...</p>;
   if (error) return <p>Error al cargar: {error.message}</p>;
@@ -58,6 +74,7 @@ export function PackingLists() {
                 <TableHead>Fecha de Carga</TableHead>
                 <TableHead>Proveedor</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -65,7 +82,34 @@ export function PackingLists() {
                 <TableRow key={list.id}>
                   <TableCell>{format(new Date(list.created_at), 'dd/MM/yyyy HH:mm')}</TableCell>
                   <TableCell>{list.supplier_name}</TableCell>
-                  <TableCell><Badge>{list.status}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusVariant(list.status)}>{list.status}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedPackingList(list)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -75,6 +119,13 @@ export function PackingLists() {
 
       {showForm && (
         <PackingListForm onClose={() => setShowForm(false)} />
+      )}
+
+      {selectedPackingList && (
+        <PackingListDetails 
+          packingList={selectedPackingList} 
+          onClose={() => setSelectedPackingList(null)} 
+        />
       )}
     </div>
   );

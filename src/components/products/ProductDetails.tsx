@@ -48,44 +48,44 @@ export function ProductDetails({ product, onClose }: ProductDetailsProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <span className="font-medium text-gray-700">Nombre:</span>
-                <p className="text-gray-900 font-semibold text-lg">{product.name}</p>
+                <span className="font-medium">Nombre:</span>
+                <p className=" font-semibold text-lg">{product.name}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">SKU:</span>
-                <p className="text-gray-900 font-mono">{product.sku}</p>
+                <span className="font-medium ">SKU:</span>
+                <p className=" font-mono">{product.sku}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Descripción:</span>
-                <p className="text-gray-900">{product.description || 'Sin descripción'}</p>
+                <span className="font-medium ">Descripción:</span>
+                <p className="">{product.description || 'Sin descripción'}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Categoría:</span>
-                <p className="text-gray-900">{product.category}</p>
+                <span className="font-medium ">Categoría:</span>
+                <p className="">{product.category}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Tipo de Producto:</span>
-                <p className="text-gray-900">{product.product_type}</p>
+                <span className="font-medium ">Tipo de Producto:</span>
+                <p className="">{product.product_type}</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <span className="font-medium text-gray-700">Estado:</span>
+                <span className="font-medium ">Estado:</span>
                 <Badge variant={product.is_active ? 'default' : 'destructive'}>
                   {product.is_active ? 'Activo' : 'Inactivo'}
                 </Badge>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Medida por Defecto:</span>
+                <span className="font-medium ">Medida por Defecto:</span>
                 <p className="text-gray-900">{product.default_meterage ? `${product.default_meterage} m` : 'No especificada'}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Peso por Defecto:</span>
-                <p className="text-gray-900">{product.default_weight_kg ? `${product.default_weight_kg} kg` : 'No especificado'}</p>
+                <span className="font-medium ">Peso por Defecto:</span>
+                <p className="">{product.default_weight_kg ? `${product.default_weight_kg} kg` : 'No especificado'}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Stock Status:</span>
+                <span className="font-medium ">Stock Status:</span>
                 <div className="flex items-center gap-2">
                   <Badge variant={stockStatus.variant}>
                     {stockStatus.status}
@@ -100,12 +100,12 @@ export function ProductDetails({ product, onClose }: ProductDetailsProps) {
             <h3 className="text-lg font-semibold mb-4">Información del Sistema</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <span className="font-medium text-gray-700">Fecha de Creación:</span>
-                <p className="text-gray-900">{format(new Date(product.created_at), 'dd/MM/yyyy HH:mm')}</p>
+                <span className="font-medium ">Fecha de Creación:</span>
+                <p className="">{format(new Date(product.created_at), 'dd/MM/yyyy HH:mm')}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Última Actualización:</span>
-                <p className="text-gray-900">{format(new Date(product.updated_at), 'dd/MM/yyyy HH:mm')}</p>
+                <span className="font-medium ">Última Actualización:</span>
+                <p className="">{format(new Date(product.updated_at), 'dd/MM/yyyy HH:mm')}</p>
               </div>
             </div>
           </div>
