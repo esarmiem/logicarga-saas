@@ -71,17 +71,18 @@ serve(async (req) => {
     // 3. Prepare inventory items for insertion
     const inventoryItemsToInsert = parsedData.map(row => {
       const productInfo = productMap.get(row.sku);
-      if (!productInfo) {
-        console.warn(`SKU not found, skipping row: ${row.sku}`);
+      if (!productInfo || !productInfo.type) {
+        console.warn(`SKU not found or product type is missing, skipping row: ${row.sku}`);
         return null;
       }
       return {
         product_id: productInfo.id,
+        product_type: productInfo.type, // <-- FIX: Add product_type
         packing_list_id: packingList.id,
         serial_number: row.serial_number,
         status: 'en_verificacion',
-        meterage: productInfo.type === 'rollo_tela' ? parseFloat(row.meterage) : null,
-        weight_kg: productInfo.type === 'tanque_ibc' ? parseFloat(row.weight_kg) : null,
+        meterage: parseFloat(row.meterage) || 0, // Accept if present, default to 0
+        weight_kg: parseFloat(row.weight_kg) || 0, // Accept if present, default to 0
         notes: `Imported from CSV - SKU: ${row.sku}`
       };
     }).filter(Boolean); // Filter out nulls for SKUs not found
@@ -95,7 +96,11 @@ serve(async (req) => {
       .from('inventory_items')
       .insert(inventoryItemsToInsert);
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      // If item insertion fails, delete the orphaned packing list to keep data consistent
+      await supabaseClient.from('packing_lists').delete().eq('id', packingList.id);
+      throw insertError;
+    }
 
     return new Response(JSON.stringify({ 
       success: true,
