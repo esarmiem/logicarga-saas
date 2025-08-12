@@ -40,8 +40,7 @@ import {
 } from '@/components/ui/pagination';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductForm } from '@/components/products/ProductForm';
-// ProductDetails is not adapted yet, so we comment it out to avoid errors
-// import { ProductDetails } from '@/components/products/ProductDetails'; 
+import { ProductDetails } from '@/components/products/ProductDetails'; 
 import { toast } from '@/hooks/use-toast';
 import type { Tables } from '@/integrations/supabase/types';
 
@@ -55,7 +54,7 @@ export function Products() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  // const [viewingProduct, setViewingProduct] = useState<Product | null>(null); // Commented out as details view is not ready
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -137,9 +136,9 @@ export function Products() {
     setShowForm(true);
   };
 
-  // const handleView = (product: Product) => {
-  //   setViewingProduct(product);
-  // };
+  const handleView = (product: Product) => {
+    setViewingProduct(product);
+  };
 
   const handleDelete = (product: Product) => {
     setProductToDelete(product);
@@ -151,9 +150,9 @@ export function Products() {
     setEditingProduct(null);
   };
 
-  // const handleCloseDetails = () => {
-  //   setViewingProduct(null);
-  // };
+  const handleCloseDetails = () => {
+    setViewingProduct(null);
+  };
 
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= totalPages) {
@@ -312,8 +311,7 @@ export function Products() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        disabled // Disabled until details view is adapted
-                        // onClick={() => handleView(product)}
+                        onClick={() => handleView(product)}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -406,13 +404,13 @@ export function Products() {
         />
       )}
 
-      {/* Product Details Modal - Temporarily disabled */}
-      {/* {viewingProduct && (
+      {/* Product Details Modal */}
+      {viewingProduct && (
         <ProductDetails
           product={viewingProduct}
           onClose={handleCloseDetails}
         />
-      )} */}
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
