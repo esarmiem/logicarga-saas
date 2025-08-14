@@ -34,7 +34,7 @@ const formatLocation = (location: InventoryItem['locations']) => {
 
 export function Inventory() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<InventoryItem['status'] | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<InventoryItem['status'] | 'all'>('disponible');
   const [itemToMove, setItemToMove] = useState<InventoryItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
